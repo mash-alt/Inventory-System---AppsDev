@@ -243,13 +243,45 @@ namespace Inventory_System___AppsDev
                 form.StartPosition = FormStartPosition.CenterParent;
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    productName = txtName.Text.Trim();
-                    categoryId = (cmbCategory.SelectedValue != null) ? Convert.ToInt32(cmbCategory.SelectedValue) : 0;
-                    supplierId = (cmbSupplier.SelectedValue != null) ? Convert.ToInt32(cmbSupplier.SelectedValue) : 0;
+                    // Input validation
+                    string nameVal = txtName.Text.Trim();
+                    if (string.IsNullOrWhiteSpace(nameVal) || nameVal.Length > 50 || !System.Text.RegularExpressions.Regex.IsMatch(nameVal, @"^[a-zA-Z0-9\s\-]+$"))
+                    {
+                        MessageBox.Show("Product Name is required, max 50 chars, and must not contain special characters.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    if (cmbCategory.SelectedValue == null || Convert.ToInt32(cmbCategory.SelectedValue) <= 0)
+                    {
+                        MessageBox.Show("Please select a valid category.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    if (cmbSupplier.SelectedValue == null || Convert.ToInt32(cmbSupplier.SelectedValue) <= 0)
+                    {
+                        MessageBox.Show("Please select a valid supplier.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    if (numQty.Value < 0)
+                    {
+                        MessageBox.Show("Quantity cannot be negative.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    if (numUnitPrice.Value < 0)
+                    {
+                        MessageBox.Show("Unit Price cannot be negative.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    if (numReorder.Value < 0)
+                    {
+                        MessageBox.Show("Reorder Level cannot be negative.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    productName = nameVal;
+                    categoryId = Convert.ToInt32(cmbCategory.SelectedValue);
+                    supplierId = Convert.ToInt32(cmbSupplier.SelectedValue);
                     quantity = (int)numQty.Value;
                     unitPrice = numUnitPrice.Value;
                     reorderLevel = (int)numReorder.Value;
-                    return !string.IsNullOrWhiteSpace(productName) && categoryId > 0 && supplierId > 0;
+                    return true;
                 }
                 return false;
             }
@@ -312,17 +344,6 @@ namespace Inventory_System___AppsDev
                         DateTime dateAdded = DateTime.Now;
                         string query = "INSERT INTO Products ([ProductName], [CategoryID], [SupplierID], [Quantity], [UnitPrice], [ReorderLevel], [Barcode], [DateAdded]) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
                         int productId;
-                        // DEBUG: Show parameter values and types before executing
-                        string debugMsg = $"SQL: {query}\n" +
-                            $"ProductName: {productName} ({productName?.GetType()})\n" +
-                            $"CategoryID: {categoryId} ({categoryId.GetType()})\n" +
-                            $"SupplierID: {supplierId} ({supplierId.GetType()})\n" +
-                            $"Quantity: {quantity} ({quantity.GetType()})\n" +
-                            $"UnitPrice: {Convert.ToDouble(unitPrice)} ({Convert.ToDouble(unitPrice).GetType()})\n" +
-                            $"ReorderLevel: {reorderLevel} ({reorderLevel.GetType()})\n" +
-                            $"Barcode: {barcode} ({barcode?.GetType()})\n" +
-                            $"DateAdded: {dateAdded} ({dateAdded.GetType()})";
-                        MessageBox.Show(debugMsg, "DEBUG: Product Insert");
                         using (OleDbCommand cmd = new OleDbCommand(query, conn))
                         {
                             cmd.Parameters.AddWithValue("@ProductName", productName);
@@ -344,14 +365,6 @@ namespace Inventory_System___AppsDev
                         if (remarks == null) remarks = "Initial stock on add";
                         // Log IN to StockLogs
                         string logQuery = "INSERT INTO StockLogs ([ProductID], [Date], [Type], [Quantity], [Remarks]) VALUES (?, ?, ?, ?, ?)";
-                        // DEBUG: Show StockLogs insert
-                        string debugLogMsg = $"SQL: {logQuery}\n" +
-                            $"ProductID: {productId} ({productId.GetType()})\n" +
-                            $"Date: {dateAdded} ({dateAdded.GetType()})\n" +
-                            $"Type: IN (System.String)\n" +
-                            $"Quantity: {quantity} ({quantity.GetType()})\n" +
-                            $"Remarks: {remarks} ({remarks?.GetType()})";
-                        MessageBox.Show(debugLogMsg, "DEBUG: StockLogs Insert");
                         using (OleDbCommand logCmd = new OleDbCommand(logQuery, conn))
                         {
                             logCmd.Parameters.AddWithValue("@ProductID", productId);
@@ -393,16 +406,6 @@ namespace Inventory_System___AppsDev
                         {
                             conn.Open();
                             string query = "UPDATE Products SET ProductName=?, CategoryID=?, SupplierID=?, Quantity=?, UnitPrice=?, ReorderLevel=? WHERE ProductID=?";
-                            // DEBUG: Show parameter values and types before executing
-                            string debugUpdateMsg = $"SQL: {query}\n" +
-                                $"ProductName: {productName} ({productName?.GetType()})\n" +
-                                $"CategoryID: {categoryId} ({categoryId.GetType()})\n" +
-                                $"SupplierID: {supplierId} ({supplierId.GetType()})\n" +
-                                $"Quantity: {newQuantity} ({newQuantity.GetType()})\n" +
-                                $"UnitPrice: {Convert.ToDouble(unitPrice)} ({Convert.ToDouble(unitPrice).GetType()})\n" +
-                                $"ReorderLevel: {reorderLevel} ({reorderLevel.GetType()})\n" +
-                                $"ProductID: {productId} ({productId.GetType()})";
-                            MessageBox.Show(debugUpdateMsg, "DEBUG: Product Update");
                             using (OleDbCommand cmd = new OleDbCommand(query, conn))
                             {
                                 cmd.Parameters.AddWithValue("@ProductName", productName);
@@ -425,14 +428,6 @@ namespace Inventory_System___AppsDev
                                     string remarks = ShowRemarksInputDialog($"Stock {type} Remarks", defaultRemark);
                                     if (remarks == null) remarks = defaultRemark;
                                     string logQuery = "INSERT INTO StockLogs ([ProductID], [Date], [Type], [Quantity], [Remarks]) VALUES (?, ?, ?, ?, ?)";
-                                    // DEBUG: Show StockLogs insert
-                                    string debugLogUpdateMsg = $"SQL: {logQuery}\n" +
-                                        $"ProductID: {productId} ({productId.GetType()})\n" +
-                                        $"Date: {DateTime.Now} ({DateTime.Now.GetType()})\n" +
-                                        $"Type: {type} (System.String)\n" +
-                                        $"Quantity: {diff} ({diff.GetType()})\n" +
-                                        $"Remarks: {remarks} ({remarks?.GetType()})";
-                                    MessageBox.Show(debugLogUpdateMsg, "DEBUG: StockLogs Insert");
                                     using (OleDbCommand logCmd = new OleDbCommand(logQuery, conn))
                                     {
                                         logCmd.Parameters.AddWithValue("@ProductID", productId);
@@ -660,9 +655,20 @@ namespace Inventory_System___AppsDev
                 form.StartPosition = FormStartPosition.CenterParent;
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    name = txtName.Text.Trim();
+                    string nameVal = txtName.Text.Trim();
+                    if (string.IsNullOrWhiteSpace(nameVal) || nameVal.Length > 50 || !System.Text.RegularExpressions.Regex.IsMatch(nameVal, @"^[a-zA-Z0-9\s\-]+$"))
+                    {
+                        MessageBox.Show("Category Name is required, max 50 chars, and must not contain special characters.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    if (txtDesc.Text.Length > 100)
+                    {
+                        MessageBox.Show("Description must be 100 characters or less.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    name = nameVal;
                     description = txtDesc.Text.Trim();
-                    return !string.IsNullOrWhiteSpace(name);
+                    return true;
                 }
                 return false;
             }
@@ -885,11 +891,32 @@ namespace Inventory_System___AppsDev
                 form.StartPosition = FormStartPosition.CenterParent;
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    name = txtName.Text.Trim();
+                    string nameVal = txtName.Text.Trim();
+                    if (string.IsNullOrWhiteSpace(nameVal) || nameVal.Length > 50 || !System.Text.RegularExpressions.Regex.IsMatch(nameVal, @"^[a-zA-Z0-9\s\-]+$"))
+                    {
+                        MessageBox.Show("Supplier Name is required, max 50 chars, and must not contain special characters.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    if (!string.IsNullOrWhiteSpace(txtEmail.Text) && !System.Text.RegularExpressions.Regex.IsMatch(txtEmail.Text, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                    {
+                        MessageBox.Show("Please enter a valid email address.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    if (txtContact.Text.Length > 50)
+                    {
+                        MessageBox.Show("Contact must be 50 characters or less.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    if (txtAddress.Text.Length > 100)
+                    {
+                        MessageBox.Show("Address must be 100 characters or less.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    name = nameVal;
                     contact = txtContact.Text.Trim();
                     email = txtEmail.Text.Trim();
                     address = txtAddress.Text.Trim();
-                    return !string.IsNullOrWhiteSpace(name);
+                    return true;
                 }
                 return false;
             }
