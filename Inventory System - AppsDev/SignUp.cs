@@ -15,7 +15,7 @@ namespace Inventory_System___AppsDev
 {
     public partial class SignUp : Form
     {
-        private readonly string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\zach\Documents\InventorySystem.accdb;Persist Security Info=True;";
+        private readonly string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\AppsDev-IT2\Inventory System\InventorySystem.accdb;Persist Security Info=True;";
 
         public SignUp()
         {
