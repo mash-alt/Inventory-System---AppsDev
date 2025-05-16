@@ -8,11 +8,15 @@ namespace Inventory_System___AppsDev
 {
     public partial class Login : Form
     {
-        private readonly string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\AppsDev-IT2\Inventory System\InventorySystem.accdb;Persist Security Info=True;";
+        private readonly string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\yeems214\Documents\Inventory-System---AppsDev\InventorySystem.accdb;Persist Security Info=True;";
 
         public Login()
         {
             InitializeComponent();
+            comboBox1.Items.Add("admin");
+            comboBox1.Items.Add("staff");
+            comboBox1.SelectedIndex = 0;
+
             LoginBtn.Click += LoginBtn_Click;
             clearButton.Click += ClearButton_Click;
             SignInLink.LinkClicked += SignInLink_LinkClicked;
@@ -22,6 +26,8 @@ namespace Inventory_System___AppsDev
         {
             string username = UsernameTxt.Text.Trim();
             string password = passwordTxt.Text;
+            string selectedRole = comboBox1.SelectedItem?.ToString();
+
 
             // Input validation
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
@@ -35,10 +41,22 @@ namespace Inventory_System___AppsDev
                 if (AuthenticateUser(username, password))
                 {
                     MessageBox.Show("Login successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    Dashboard dashboardForm = new Dashboard();
-                    this.Hide(); // Hide the login form
-                    dashboardForm.FormClosed += (s, args) => this.Close(); 
-                    dashboardForm.Show();
+                    Form nextForm = null;
+                    if (selectedRole == "admin")
+                    {
+                        nextForm = new Dashboard();
+                    }
+                    else if (selectedRole == "staff")
+                    {
+                        nextForm = new Form1();
+                    }
+
+                    if (nextForm != null)
+                    {
+                        this.Hide(); // Hide the login form
+                        nextForm.FormClosed += (s, args) => this.Close();
+                        nextForm.Show();
+                    }
 
                 }
                 else
@@ -57,9 +75,11 @@ namespace Inventory_System___AppsDev
 
         private bool AuthenticateUser(string username, string password)
         {
+            string selectedRole = comboBox1.SelectedItem?.ToString();
+
             using (OleDbConnection conn = new OleDbConnection(connectionString))
             {
-                string query = "SELECT [Password] FROM Users WHERE Username = @Username";
+                string query = "SELECT [Password], [Role] FROM Users WHERE Username = @Username";
 
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
@@ -68,18 +88,22 @@ namespace Inventory_System___AppsDev
                     try
                     {
                         conn.Open();
-                        object result = cmd.ExecuteScalar();
-
-                        if (result != null)
+                        using (OleDbDataReader reader = cmd.ExecuteReader())
                         {
-                            string storedHashedPassword = result.ToString();
-                            string inputHashedPassword = HashPassword(password);
+                            if (reader.Read())
+                            {
+                                string storedHashedPassword = reader["Password"].ToString();
+                                string storedRole = reader["Role"].ToString();
+                                string inputHashedPassword = HashPassword(password);
 
-                            return storedHashedPassword == inputHashedPassword;
-                        }
-                        else
-                        {
-                            return false; // Username not found
+                                // Check both password and role
+                                return storedHashedPassword == inputHashedPassword &&
+                                       string.Equals(storedRole, selectedRole, StringComparison.OrdinalIgnoreCase);
+                            }
+                            else
+                            {
+                                return false; // Username not found
+                            }
                         }
                     }
                     catch (OleDbException ex)

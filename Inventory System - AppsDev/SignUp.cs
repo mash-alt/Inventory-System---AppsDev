@@ -15,7 +15,7 @@ namespace Inventory_System___AppsDev
 {
     public partial class SignUp : Form
     {
-        private readonly string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\AppsDev-IT2\Inventory System\InventorySystem.accdb;Persist Security Info=True;";
+        private readonly string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\yeems214\Documents\Inventory-System---AppsDev\InventorySystem.accdb;Persist Security Info=True;";
 
         public SignUp()
         {
@@ -52,7 +52,8 @@ namespace Inventory_System___AppsDev
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                         ClearFields();
 
-                        // Optionally close or redirect
+                        // Open Login form and close SignUp form
+                        new Login().Show();
                         this.Close();
                     }
                 }
@@ -68,13 +69,14 @@ namespace Inventory_System___AppsDev
         {
             using (OleDbConnection conn = new OleDbConnection(connectionString))
             {
-                string query = "INSERT INTO Users (Username, Name, [Password]) VALUES (@Username, @Name, @Password)";
+                string query = "INSERT INTO Users (Username, Name, [Password], [Role]) VALUES (@Username, @Name, @Password, @Role)";
 
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@Username", UserNameTxtBox.Text.Trim());
                     cmd.Parameters.AddWithValue("@Name", NameTxtBox.Text.Trim());
                     cmd.Parameters.AddWithValue("@Password", HashPassword(PasswordTxtBox.Text));
+                    cmd.Parameters.AddWithValue("@Role", "staff"); // Set Role as 'staff'
 
                     try
                     {
@@ -222,12 +224,6 @@ namespace Inventory_System___AppsDev
         {
             this.Close();
             new Login().Show();
-        }
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            base.OnFormClosing(e);
-
-            Application.Exit();
         }
     }
 }

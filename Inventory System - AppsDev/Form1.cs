@@ -6,12 +6,12 @@ using System.Data.OleDb;
 using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading.Tasks        ;
 using System.Windows.Forms;
 
 namespace Inventory_System___AppsDev
 {
-    public partial class Dashboard : Form
+    public partial class Form1 : Form
     {
         private readonly string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\yeems214\Documents\Inventory-System---AppsDev\InventorySystem.accdb;Persist Security Info=True;";
         private DataGridView productGrid;
@@ -19,20 +19,6 @@ namespace Inventory_System___AppsDev
         private Button updateButton;
         private Button deleteButton;
         private Button refreshButton;
-
-        // Category controls
-        private DataGridView categoryGrid;
-        private Button addCategoryButton;
-        private Button updateCategoryButton;
-        private Button deleteCategoryButton;
-        private Button refreshCategoryButton;
-
-        // Supplier controls
-        private DataGridView supplierGrid;
-        private Button addSupplierButton;
-        private Button updateSupplierButton;
-        private Button deleteSupplierButton;
-        private Button refreshSupplierButton;
 
         // STOCK LOGS SECTION
         private DataGridView stockLogsGrid;
@@ -43,12 +29,119 @@ namespace Inventory_System___AppsDev
         private int stockLogsPageSize = 20;
         private int stockLogsTotalPages = 1;
 
-        public Dashboard()
+        public Form1()
         {
             InitializeComponent();
+            SetupUI();
             InitializeProductComponents();
             InitializeEventHandlers();
-            LoadProducts(); // Load products when dashboard starts
+            LoadProducts(); // Load products when form starts
+        }
+
+        private void SetupUI()
+        {
+            // Main form setup
+            this.MinimumSize = new Size(1200, 768);
+            this.Text = "Inventory System - Staff Dashboard";
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            // Create the side navigation panel
+            Panel sideNavPanel = new Panel
+            {
+                BackColor = Color.FromArgb(0, 122, 204),
+                Dock = DockStyle.Left,
+                Size = new Size(250, this.Height)
+            };
+
+            // Create logo panel
+            Panel logoPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Size = new Size(250, 100)
+            };
+
+            Label logoLabel = new Label
+            {
+                Text = "Inventory System",
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                ForeColor = Color.White,
+                AutoSize = true,
+                Location = new Point(12, 35)
+            };
+
+            logoPanel.Controls.Add(logoLabel);
+            sideNavPanel.Controls.Add(logoPanel);
+
+            // Create navigation buttons
+            productsButton = new Button
+            {
+                Text = "Products",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(250, 50),
+                Location = new Point(0, 140),
+                Cursor = Cursors.Hand
+            };
+            productsButton.FlatAppearance.BorderSize = 0;
+
+            stockLogsButton = new Button
+            {
+                Text = "Stock Logs",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(250, 50),
+                Location = new Point(0, 190),
+                Cursor = Cursors.Hand
+            };
+            stockLogsButton.FlatAppearance.BorderSize = 0;
+
+            logoutButton = new Button
+            {
+                Text = "Logout",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(250, 50),
+                Dock = DockStyle.Bottom,
+                Cursor = Cursors.Hand
+            };
+            logoutButton.FlatAppearance.BorderSize = 0;
+
+            sideNavPanel.Controls.Add(productsButton);
+            sideNavPanel.Controls.Add(stockLogsButton);
+            sideNavPanel.Controls.Add(logoutButton);
+
+            // Create header panel
+            headerPanel = new Panel
+            {
+                BackColor = Color.White,
+                Dock = DockStyle.Top,
+                Size = new Size(this.Width - sideNavPanel.Width, 60)
+            };
+
+            headerLabel = new Label
+            {
+                Text = "Staff Dashboard",
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                ForeColor = Color.FromArgb(0, 122, 204),
+                AutoSize = true,
+                Location = new Point(17, 14)
+            };
+
+            headerPanel.Controls.Add(headerLabel);
+
+            // Create main content panel
+            mainPanel = new Panel
+            {
+                Dock = DockStyle.Fill
+            };
+
+            // Add all controls to the form
+            this.Controls.Add(mainPanel);
+            this.Controls.Add(headerPanel);
+            this.Controls.Add(sideNavPanel);
         }
 
         private void InitializeProductComponents()
@@ -133,13 +226,11 @@ namespace Inventory_System___AppsDev
             deleteButton.Click += DeleteButton_Click;
             refreshButton.Click += RefreshButton_Click;
             productsButton.Click += ProductsButton_Click;
-            suppliersButton.Click += SuppliersButton_Click;
-            categoriesButton.Click += CategoriesButton_Click;
             stockLogsButton.Click += StockLogsButton_Click;
             logoutButton.Click += LogoutButton_Click;
 
             // Handle form closing
-            this.FormClosing += Dashboard_FormClosing;
+            this.FormClosing += Form1_FormClosing;
         }
 
         private void LoadProducts()
@@ -174,7 +265,7 @@ namespace Inventory_System___AppsDev
             return $"PRD{datePart}{randomPart}";
         }
 
-        // Helper method to show input dialog for product details (with ComboBoxes for Category and Supplier)
+        // Helper method to show input dialog for product details
         private bool ShowProductInputDialog(string title, ref string productName, ref int categoryId, ref int supplierId, ref int quantity, ref decimal unitPrice, ref int reorderLevel, bool isAdd = false)
         {
             using (Form form = new Form())
@@ -192,14 +283,7 @@ namespace Inventory_System___AppsDev
                 ComboBox cmbSupplier = new ComboBox() { Left = 110, Top = y, Width = 200, DropDownStyle = ComboBoxStyle.DropDownList };
                 y += spacing;
                 Label lblQty = new Label() { Left = 10, Top = y, Text = "Quantity", Width = 90 };
-                NumericUpDown numQty = new NumericUpDown() { 
-                    Left = 110, 
-                    Top = y, 
-                    Width = 200, 
-                    Minimum = 0, 
-                    Maximum = 100000,
-                    Value = quantity 
-                };
+                NumericUpDown numQty = new NumericUpDown() { Left = 110, Top = y, Width = 200, Value = quantity, Minimum = 0, Maximum = 100000 };
                 y += spacing;
                 Label lblUnitPrice = new Label() { Left = 10, Top = y, Text = "UnitPrice", Width = 90 };
                 NumericUpDown numUnitPrice = new NumericUpDown() { Left = 110, Top = y, Width = 200, DecimalPlaces = 2, Minimum = 0, Maximum = 1000000, Value = unitPrice };
@@ -476,7 +560,6 @@ namespace Inventory_System___AppsDev
                         using (OleDbConnection conn = new OleDbConnection(connectionString))
                         {
                             conn.Open();
-                            // No OUT log on delete
                             // First, delete related stock logs
                             string deleteLogsQuery = "DELETE FROM StockLogs WHERE ProductID=?";
                             using (OleDbCommand cmdLogs = new OleDbCommand(deleteLogsQuery, conn))
@@ -523,18 +606,6 @@ namespace Inventory_System___AppsDev
             LoadProducts();
         }
 
-        private void SuppliersButton_Click(object sender, EventArgs e)
-        {
-            headerLabel.Text = "Suppliers";
-            ShowSuppliers();
-        }
-
-        private void CategoriesButton_Click(object sender, EventArgs e)
-        {
-            headerLabel.Text = "Categories";
-            ShowCategories();
-        }
-
         private void StockLogsButton_Click(object sender, EventArgs e)
         {
             headerLabel.Text = "Stock Logs";
@@ -552,7 +623,7 @@ namespace Inventory_System___AppsDev
             }
         }
 
-        private void Dashboard_FormClosing(object sender, FormClosingEventArgs e)
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (e.CloseReason == CloseReason.UserClosing)
             {
@@ -566,508 +637,6 @@ namespace Inventory_System___AppsDev
                     Application.Exit();
                 }
             }
-        }
-
-        private void ShowSection(string sectionName)
-        {
-            mainPanel.Controls.Clear();
-            Label placeholder = new Label
-            {
-                Text = $"{sectionName} Section",
-                Font = new Font("Segoe UI", 18, FontStyle.Bold),
-                ForeColor = Color.Gray,
-                AutoSize = true,
-                Location = new Point(30, 30)
-            };
-            mainPanel.Controls.Add(placeholder);
-        }
-
-        // CATEGORY SECTION
-        private void InitializeCategoryComponents()
-        {
-            categoryGrid = new DataGridView
-            {
-                Name = "categoryGrid",
-                Dock = DockStyle.Bottom,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                MultiSelect = false,
-                AllowUserToAddRows = false,
-                AllowUserToDeleteRows = false,
-                ReadOnly = true,
-                Location = new Point(10, 100),
-                Size = new Size(mainPanel.Width - 20, mainPanel.Height - 150)
-            };
-            addCategoryButton = new Button { Text = "Add Category", Size = new Size(120, 40), Location = new Point(10, 20), BackColor = Color.FromArgb(0, 122, 204), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
-            addCategoryButton.FlatAppearance.BorderSize = 0;
-            updateCategoryButton = new Button { Text = "Update Category", Size = new Size(120, 40), Location = new Point(140, 20), BackColor = Color.FromArgb(0, 122, 204), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
-            updateCategoryButton.FlatAppearance.BorderSize = 0;
-            deleteCategoryButton = new Button { Text = "Delete Category", Size = new Size(120, 40), Location = new Point(270, 20), BackColor = Color.FromArgb(0, 122, 204), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
-            deleteCategoryButton.FlatAppearance.BorderSize = 0;
-            refreshCategoryButton = new Button { Text = "Refresh", Size = new Size(120, 40), Location = new Point(400, 20), BackColor = Color.FromArgb(0, 122, 204), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
-            refreshCategoryButton.FlatAppearance.BorderSize = 0;
-            addCategoryButton.Click += AddCategoryButton_Click;
-            updateCategoryButton.Click += UpdateCategoryButton_Click;
-            deleteCategoryButton.Click += DeleteCategoryButton_Click;
-            refreshCategoryButton.Click += RefreshCategoryButton_Click;
-        }
-        private void ShowCategories()
-        {
-            mainPanel.Controls.Clear();
-            InitializeCategoryComponents();
-            mainPanel.Controls.Add(categoryGrid);
-            mainPanel.Controls.Add(addCategoryButton);
-            mainPanel.Controls.Add(updateCategoryButton);
-            mainPanel.Controls.Add(deleteCategoryButton);
-            mainPanel.Controls.Add(refreshCategoryButton);
-            LoadCategories();
-        }
-        private void LoadCategories()
-        {
-            try
-            {
-                using (OleDbConnection conn = new OleDbConnection(connectionString))
-                {
-                    conn.Open();
-                    string query = "SELECT * FROM Categories";
-                    using (OleDbDataAdapter adapter = new OleDbDataAdapter(query, conn))
-                    {
-                        DataTable dataTable = new DataTable();
-                        adapter.Fill(dataTable);
-                        categoryGrid.DataSource = dataTable;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading categories: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-        private bool ShowCategoryInputDialog(string title, ref string name, ref string description)
-        {
-            using (Form form = new Form())
-            {
-                form.Text = title;
-                Label lblName = new Label() { Left = 10, Top = 20, Text = "Name", Width = 80 };
-                TextBox txtName = new TextBox() { Left = 100, Top = 20, Width = 200, Text = name };
-                Label lblDesc = new Label() { Left = 10, Top = 60, Text = "Description", Width = 80 };
-                TextBox txtDesc = new TextBox() { Left = 100, Top = 60, Width = 200, Text = description };
-                Button btnOk = new Button() { Text = "OK", Left = 100, Width = 80, Top = 110, DialogResult = DialogResult.OK };
-                Button btnCancel = new Button() { Text = "Cancel", Left = 220, Width = 80, Top = 110, DialogResult = DialogResult.Cancel };
-                form.Controls.AddRange(new Control[] { lblName, txtName, lblDesc, txtDesc, btnOk, btnCancel });
-                form.AcceptButton = btnOk;
-                form.CancelButton = btnCancel;
-                form.ClientSize = new Size(320, 160);
-                form.FormBorderStyle = FormBorderStyle.FixedDialog;
-                form.StartPosition = FormStartPosition.CenterParent;
-                if (form.ShowDialog() == DialogResult.OK)
-                {
-                    string nameVal = txtName.Text.Trim();
-                    if (string.IsNullOrWhiteSpace(nameVal) || nameVal.Length > 50 || !System.Text.RegularExpressions.Regex.IsMatch(nameVal, @"^[a-zA-Z0-9\s\-]+$"))
-                    {
-                        MessageBox.Show("Category Name is required, max 50 chars, and must not contain special characters.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return false;
-                    }
-                    if (txtDesc.Text.Length > 100)
-                    {
-                        MessageBox.Show("Description must be 100 characters or less.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return false;
-                    }
-                    name = nameVal;
-                    description = txtDesc.Text.Trim();
-                    return true;
-                }
-                return false;
-            }
-        }
-        private void AddCategoryButton_Click(object sender, EventArgs e)
-        {
-            string name = "";
-            string description = "";
-            if (ShowCategoryInputDialog("Add Category", ref name, ref description))
-            {
-                try
-                {
-                    using (OleDbConnection conn = new OleDbConnection(connectionString))
-                    {
-                        conn.Open();
-                        string query = "INSERT INTO Categories (Name, Description) VALUES (?, ?)";
-                        using (OleDbCommand cmd = new OleDbCommand(query, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@Name", name);
-                            cmd.Parameters.AddWithValue("@Description", description);
-                            cmd.ExecuteNonQuery();
-                        }
-                    }
-                    LoadCategories();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error adding category: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }
-        private void UpdateCategoryButton_Click(object sender, EventArgs e)
-        {
-            if (categoryGrid.SelectedRows.Count > 0)
-            {
-                DataGridViewRow row = categoryGrid.SelectedRows[0];
-                int categoryId = Convert.ToInt32(row.Cells["CategoryID"].Value);
-                string name = row.Cells["Name"].Value.ToString();
-                string description = row.Cells["Description"].Value.ToString();
-                if (ShowCategoryInputDialog("Update Category", ref name, ref description))
-                {
-                    try
-                    {
-                        using (OleDbConnection conn = new OleDbConnection(connectionString))
-                        {
-                            conn.Open();
-                            string query = "UPDATE Categories SET Name=?, Description=? WHERE CategoryID=?";
-                            using (OleDbCommand cmd = new OleDbCommand(query, conn))
-                            {
-                                cmd.Parameters.AddWithValue("@Name", name);
-                                cmd.Parameters.AddWithValue("@Description", description);
-                                cmd.Parameters.AddWithValue("@CategoryID", categoryId);
-                                cmd.ExecuteNonQuery();
-                            }
-                        }
-                        LoadCategories();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error updating category: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select a category to update.", "Update Category", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-        }
-        private void DeleteCategoryButton_Click(object sender, EventArgs e)
-        {
-            if (categoryGrid.SelectedRows.Count > 0)
-            {
-                if (MessageBox.Show("Are you sure you want to delete this category? All related products and their stock logs will also be deleted.", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                {
-                    DataGridViewRow row = categoryGrid.SelectedRows[0];
-                    int categoryId = Convert.ToInt32(row.Cells["CategoryID"].Value);
-                    try
-                    {
-                        using (OleDbConnection conn = new OleDbConnection(connectionString))
-                        {
-                            conn.Open();
-                            // Get all products for this category
-                            string getProductsQuery = "SELECT ProductID FROM Products WHERE CategoryID=?";
-                            List<int> productIds = new List<int>();
-                            using (OleDbCommand getProductsCmd = new OleDbCommand(getProductsQuery, conn))
-                            {
-                                getProductsCmd.Parameters.AddWithValue("@CategoryID", categoryId);
-                                using (OleDbDataReader reader = getProductsCmd.ExecuteReader())
-                                {
-                                    while (reader.Read())
-                                    {
-                                        productIds.Add(reader.GetInt32(0));
-                                    }
-                                }
-                            }
-                            // Delete stock logs for each product
-                            foreach (int productId in productIds)
-                            {
-                                string deleteLogsQuery = "DELETE FROM StockLogs WHERE ProductID=?";
-                                using (OleDbCommand cmdLogs = new OleDbCommand(deleteLogsQuery, conn))
-                                {
-                                    cmdLogs.Parameters.AddWithValue("@ProductID", productId);
-                                    cmdLogs.ExecuteNonQuery();
-                                }
-                            }
-                            // Delete products for this category
-                            string deleteProductsQuery = "DELETE FROM Products WHERE CategoryID=?";
-                            using (OleDbCommand cmdProducts = new OleDbCommand(deleteProductsQuery, conn))
-                            {
-                                cmdProducts.Parameters.AddWithValue("@CategoryID", categoryId);
-                                cmdProducts.ExecuteNonQuery();
-                            }
-                            // Delete the category
-                            string deleteCategoryQuery = "DELETE FROM Categories WHERE CategoryID=?";
-                            using (OleDbCommand cmd = new OleDbCommand(deleteCategoryQuery, conn))
-                            {
-                                cmd.Parameters.AddWithValue("@CategoryID", categoryId);
-                                cmd.ExecuteNonQuery();
-                            }
-                        }
-                        LoadCategories();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error deleting category: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select a category to delete.", "Delete Category", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-        }
-        private void RefreshCategoryButton_Click(object sender, EventArgs e)
-        {
-            LoadCategories();
-        }
-
-        // SUPPLIER SECTION
-        private void InitializeSupplierComponents()
-        {
-            supplierGrid = new DataGridView
-            {
-                Name = "supplierGrid",
-                Dock = DockStyle.Bottom,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                MultiSelect = false,
-                AllowUserToAddRows = false,
-                AllowUserToDeleteRows = false,
-                ReadOnly = true,
-                Location = new Point(10, 100),
-                Size = new Size(mainPanel.Width - 20, mainPanel.Height - 150)
-            };
-            addSupplierButton = new Button { Text = "Add Supplier", Size = new Size(120, 40), Location = new Point(10, 20), BackColor = Color.FromArgb(0, 122, 204), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
-            addSupplierButton.FlatAppearance.BorderSize = 0;
-            updateSupplierButton = new Button { Text = "Update Supplier", Size = new Size(120, 40), Location = new Point(140, 20), BackColor = Color.FromArgb(0, 122, 204), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
-            updateSupplierButton.FlatAppearance.BorderSize = 0;
-            deleteSupplierButton = new Button { Text = "Delete Supplier", Size = new Size(120, 40), Location = new Point(270, 20), BackColor = Color.FromArgb(0, 122, 204), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
-            deleteSupplierButton.FlatAppearance.BorderSize = 0;
-            refreshSupplierButton = new Button { Text = "Refresh", Size = new Size(120, 40), Location = new Point(400, 20), BackColor = Color.FromArgb(0, 122, 204), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
-            refreshSupplierButton.FlatAppearance.BorderSize = 0;
-            addSupplierButton.Click += AddSupplierButton_Click;
-            updateSupplierButton.Click += UpdateSupplierButton_Click;
-            deleteSupplierButton.Click += DeleteSupplierButton_Click;
-            refreshSupplierButton.Click += RefreshSupplierButton_Click;
-        }
-        private void ShowSuppliers()
-        {
-            mainPanel.Controls.Clear();
-            InitializeSupplierComponents();
-            mainPanel.Controls.Add(supplierGrid);
-            mainPanel.Controls.Add(addSupplierButton);
-            mainPanel.Controls.Add(updateSupplierButton);
-            mainPanel.Controls.Add(deleteSupplierButton);
-            mainPanel.Controls.Add(refreshSupplierButton);
-            LoadSuppliers();
-        }
-        private void LoadSuppliers()
-        {
-            try
-            {
-                using (OleDbConnection conn = new OleDbConnection(connectionString))
-                {
-                    conn.Open();
-                    string query = "SELECT * FROM Suppliers";
-                    using (OleDbDataAdapter adapter = new OleDbDataAdapter(query, conn))
-                    {
-                        DataTable dataTable = new DataTable();
-                        adapter.Fill(dataTable);
-                        supplierGrid.DataSource = dataTable;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading suppliers: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-        private bool ShowSupplierInputDialog(string title, ref string name, ref string contact, ref string email, ref string address)
-        {
-            using (Form form = new Form())
-            {
-                form.Text = title;
-                Label lblName = new Label() { Left = 10, Top = 20, Text = "Name", Width = 80 };
-                TextBox txtName = new TextBox() { Left = 100, Top = 20, Width = 200, Text = name };
-                Label lblContact = new Label() { Left = 10, Top = 60, Text = "Contact", Width = 80 };
-                TextBox txtContact = new TextBox() { Left = 100, Top = 60, Width = 200, Text = contact };
-                Label lblEmail = new Label() { Left = 10, Top = 100, Text = "Email", Width = 80 };
-                TextBox txtEmail = new TextBox() { Left = 100, Top = 100, Width = 200, Text = email };
-                Label lblAddress = new Label() { Left = 10, Top = 140, Text = "Address", Width = 80 };
-                TextBox txtAddress = new TextBox() { Left = 100, Top = 140, Width = 200, Text = address };
-                Button btnOk = new Button() { Text = "OK", Left = 100, Width = 80, Top = 190, DialogResult = DialogResult.OK };
-                Button btnCancel = new Button() { Text = "Cancel", Left = 220, Width = 80, Top = 190, DialogResult = DialogResult.Cancel };
-                form.Controls.AddRange(new Control[] { lblName, txtName, lblContact, txtContact, lblEmail, txtEmail, lblAddress, txtAddress, btnOk, btnCancel });
-                form.AcceptButton = btnOk;
-                form.CancelButton = btnCancel;
-                form.ClientSize = new Size(320, 240);
-                form.FormBorderStyle = FormBorderStyle.FixedDialog;
-                form.StartPosition = FormStartPosition.CenterParent;
-                if (form.ShowDialog() == DialogResult.OK)
-                {
-                    string nameVal = txtName.Text.Trim();
-                    if (string.IsNullOrWhiteSpace(nameVal) || nameVal.Length > 50 || !System.Text.RegularExpressions.Regex.IsMatch(nameVal, @"^[a-zA-Z0-9\s\-]+$"))
-                    {
-                        MessageBox.Show("Supplier Name is required, max 50 chars, and must not contain special characters.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return false;
-                    }
-                    if (!string.IsNullOrWhiteSpace(txtEmail.Text) && !System.Text.RegularExpressions.Regex.IsMatch(txtEmail.Text, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-                    {
-                        MessageBox.Show("Please enter a valid email address.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return false;
-                    }
-                    if (txtContact.Text.Length > 50)
-                    {
-                        MessageBox.Show("Contact must be 50 characters or less.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return false;
-                    }
-                    if (txtAddress.Text.Length > 100)
-                    {
-                        MessageBox.Show("Address must be 100 characters or less.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return false;
-                    }
-                    name = nameVal;
-                    contact = txtContact.Text.Trim();
-                    email = txtEmail.Text.Trim();
-                    address = txtAddress.Text.Trim();
-                    return true;
-                }
-                return false;
-            }
-        }
-        private void AddSupplierButton_Click(object sender, EventArgs e)
-        {
-            string name = "";
-            string contact = "";
-            string email = "";
-            string address = "";
-            if (ShowSupplierInputDialog("Add Supplier", ref name, ref contact, ref email, ref address))
-            {
-                try
-                {
-                    using (OleDbConnection conn = new OleDbConnection(connectionString))
-                    {
-                        conn.Open();
-                        string query = "INSERT INTO Suppliers (Name, Contact, Email, Address) VALUES (?, ?, ?, ?)";
-                        using (OleDbCommand cmd = new OleDbCommand(query, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@Name", name);
-                            cmd.Parameters.AddWithValue("@Contact", contact);
-                            cmd.Parameters.AddWithValue("@Email", email);
-                            cmd.Parameters.AddWithValue("@Address", address);
-                            cmd.ExecuteNonQuery();
-                        }
-                    }
-                    LoadSuppliers();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error adding supplier: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }
-        private void UpdateSupplierButton_Click(object sender, EventArgs e)
-        {
-            if (supplierGrid.SelectedRows.Count > 0)
-            {
-                DataGridViewRow row = supplierGrid.SelectedRows[0];
-                int supplierId = Convert.ToInt32(row.Cells["SupplierID"].Value);
-                string name = row.Cells["Name"].Value.ToString();
-                string contact = row.Cells["Contact"].Value.ToString();
-                string email = row.Cells["Email"].Value.ToString();
-                string address = row.Cells["Address"].Value.ToString();
-                if (ShowSupplierInputDialog("Update Supplier", ref name, ref contact, ref email, ref address))
-                {
-                    try
-                    {
-                        using (OleDbConnection conn = new OleDbConnection(connectionString))
-                        {
-                            conn.Open();
-                            string query = "UPDATE Suppliers SET Name=?, Contact=?, Email=?, Address=? WHERE SupplierID=?";
-                            using (OleDbCommand cmd = new OleDbCommand(query, conn))
-                            {
-                                cmd.Parameters.AddWithValue("@Name", name);
-                                cmd.Parameters.AddWithValue("@Contact", contact);
-                                cmd.Parameters.AddWithValue("@Email", email);
-                                cmd.Parameters.AddWithValue("@Address", address);
-                                cmd.Parameters.AddWithValue("@SupplierID", supplierId);
-                                cmd.ExecuteNonQuery();
-                            }
-                        }
-                        LoadSuppliers();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error updating supplier: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select a supplier to update.", "Update Supplier", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-        }
-        private void DeleteSupplierButton_Click(object sender, EventArgs e)
-        {
-            if (supplierGrid.SelectedRows.Count > 0)
-            {
-                if (MessageBox.Show("Are you sure you want to delete this supplier? All related products and their stock logs will also be deleted.", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                {
-                    DataGridViewRow row = supplierGrid.SelectedRows[0];
-                    int supplierId = Convert.ToInt32(row.Cells["SupplierID"].Value);
-                    try
-                    {
-                        using (OleDbConnection conn = new OleDbConnection(connectionString))
-                        {
-                            conn.Open();
-                            // Get all products for this supplier
-                            string getProductsQuery = "SELECT ProductID FROM Products WHERE SupplierID=?";
-                            List<int> productIds = new List<int>();
-                            using (OleDbCommand getProductsCmd = new OleDbCommand(getProductsQuery, conn))
-                            {
-                                getProductsCmd.Parameters.AddWithValue("@SupplierID", supplierId);
-                                using (OleDbDataReader reader = getProductsCmd.ExecuteReader())
-                                {
-                                    while (reader.Read())
-                                    {
-                                        productIds.Add(reader.GetInt32(0));
-                                    }
-                                }
-                            }
-                            // Delete stock logs for each product
-                            foreach (int productId in productIds)
-                            {
-                                string deleteLogsQuery = "DELETE FROM StockLogs WHERE ProductID=?";
-                                using (OleDbCommand cmdLogs = new OleDbCommand(deleteLogsQuery, conn))
-                                {
-                                    cmdLogs.Parameters.AddWithValue("@ProductID", productId);
-                                    cmdLogs.ExecuteNonQuery();
-                                }
-                            }
-                            // Delete products for this supplier
-                            string deleteProductsQuery = "DELETE FROM Products WHERE SupplierID=?";
-                            using (OleDbCommand cmdProducts = new OleDbCommand(deleteProductsQuery, conn))
-                            {
-                                cmdProducts.Parameters.AddWithValue("@SupplierID", supplierId);
-                                cmdProducts.ExecuteNonQuery();
-                            }
-                            // Delete the supplier
-                            string deleteSupplierQuery = "DELETE FROM Suppliers WHERE SupplierID=?";
-                            using (OleDbCommand cmd = new OleDbCommand(deleteSupplierQuery, conn))
-                            {
-                                cmd.Parameters.AddWithValue("@SupplierID", supplierId);
-                                cmd.ExecuteNonQuery();
-                            }
-                        }
-                        LoadSuppliers();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error deleting supplier: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select a supplier to delete.", "Delete Supplier", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-        }
-        private void RefreshSupplierButton_Click(object sender, EventArgs e)
-        {
-            LoadSuppliers();
         }
 
         private void InitializeStockLogsComponents()
@@ -1093,6 +662,7 @@ namespace Inventory_System___AppsDev
             prevStockLogsButton.Click += PrevStockLogsButton_Click;
             nextStockLogsButton.Click += NextStockLogsButton_Click;
         }
+
         private void ShowStockLogs()
         {
             mainPanel.Controls.Clear();
@@ -1104,6 +674,7 @@ namespace Inventory_System___AppsDev
             stockLogsPage = 1;
             LoadStockLogs();
         }
+
         private void LoadStockLogs()
         {
             try
@@ -1135,7 +706,7 @@ namespace Inventory_System___AppsDev
                         adapter.Fill(dataTable);
                         stockLogsGrid.DataSource = dataTable;
                     }
-                    stockLogsPageLabel.Text = $"Page {stockLogsPage} of {Math.Max(stockLogsTotalPages,1)}";
+                    stockLogsPageLabel.Text = $"Page {stockLogsPage} of {Math.Max(stockLogsTotalPages, 1)}";
                     prevStockLogsButton.Enabled = stockLogsPage > 1;
                     nextStockLogsButton.Enabled = stockLogsPage < stockLogsTotalPages;
                 }
@@ -1145,6 +716,7 @@ namespace Inventory_System___AppsDev
                 MessageBox.Show($"Error loading stock logs: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void PrevStockLogsButton_Click(object sender, EventArgs e)
         {
             if (stockLogsPage > 1)
@@ -1153,6 +725,7 @@ namespace Inventory_System___AppsDev
                 LoadStockLogs();
             }
         }
+
         private void NextStockLogsButton_Click(object sender, EventArgs e)
         {
             if (stockLogsPage < stockLogsTotalPages)
@@ -1161,5 +734,13 @@ namespace Inventory_System___AppsDev
                 LoadStockLogs();
             }
         }
+
+        // Navigation buttons
+        private Button productsButton;
+        private Button stockLogsButton;
+        private Button logoutButton;
+        private Panel mainPanel;
+        private Panel headerPanel;
+        private Label headerLabel;
     }
 }
